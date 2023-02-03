@@ -193,6 +193,45 @@ describe('TypeScript Resolvers Plugin + Apollo Federation', () => {
     `);
   });
 
+  it('should handle nested fields from @provides directive', async () => {
+    const federatedSchema = /* GraphQL */ `
+      type Query {
+        users: [User]
+      }
+
+      type User {
+        name: UserInfo! @provides(fields: "firstName addressInfo { street }")
+        username: String
+      }
+
+      type UserInfo {
+        firstName: String! @external
+        lastName: String! @external
+        addressInfo: AddressInfo!
+      }
+
+      type AddressInfo {
+        street: String!
+        state: String!
+      }
+    `;
+
+    const content = await generate({
+      schema: federatedSchema,
+      config: {
+        federation: true,
+      },
+    });
+
+    expect(content).toBeSimilarStringTo(`
+      export type UserResolvers<ContextType = any, ParentType extends ResolversParentTypes['User'] = ResolversParentTypes['User']> = {
+        name?: Resolver<ResolversTypes['UserInfo'], ParentType, ContextType>;
+        username?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+        __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+      };
+    `);
+  });
+
   it('should not apply key/requires fields restriction for base federated types', async () => {
     const federatedSchema = /* GraphQL */ `
       type Query {

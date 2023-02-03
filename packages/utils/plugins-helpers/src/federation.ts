@@ -251,11 +251,10 @@ export class ApolloFederation {
     const arg = directive.arguments.find(arg => arg.name.value === 'fields');
     const { value } = arg.value as StringValueNode;
 
-    if (/[{}]/gi.test(value)) {
-      throw new Error('Nested fields in _FieldSet is not supported in the @provides directive');
-    }
-
-    return value.split(/\s+/g);
+    return value
+      .replace(/\s*[{}]/g, '')
+      .trim()
+      .split(/\s+/g);
   }
 
   private createMapOfProvides() {
